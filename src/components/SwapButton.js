@@ -23,7 +23,7 @@ export default function SwapButton() {
     <PopupState variant="popover">
       {(popupState) => (
         <div style={{ display: 'flex' }}>
-          <Tooltip title="Swap tokens">
+          <Tooltip title="Swap Tokens">
             <IconButton {...bindTrigger(popupState)}>
               <SwapHoriz />
             </IconButton>
