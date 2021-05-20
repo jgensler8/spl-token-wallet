@@ -4,7 +4,7 @@ import SwapHoriz from '@material-ui/icons/SwapHoriz';
 import PopupState, { bindTrigger, bindPopover } from 'material-ui-popup-state';
 import Swap from '@project-serum/swap-ui';
 import { Provider } from '@project-serum/anchor';
-import { Connection, TransactionSignature } from '@solana/web3.js';
+import { Signer, Connection, TransactionSignature } from '@solana/web3.js';
 import { TokenListContainer } from '@solana/spl-token-registry';
 import { useTokenInfos } from '../utils/tokens/names';
 import { useSendTransaction } from '../utils/notifications';
@@ -63,13 +63,27 @@ class NotifyingProvider extends Provider {
 
   async send(
     tx: Transaction,
-    signers?: Array<Account | undefined>,
+    signers?: Array<Signer | undefined>,
     opts?: ConfirmOptions,
   ): Promise<TransactionSignature> {
     return new Promise((onSuccess, onError) => {
       this.sendTransaction(super.send(tx, signers, opts), {
         onSuccess,
         onError,
+      });
+    });
+  }
+
+  async sendAll(
+    txs: Array<{ tx: Transaction, signers: Array<Signer | undefined> }>,
+    opts?: ConfirmOptions,
+  ): Promise<Array<TransactionSignature>> {
+    return new Promise((onSuccess, onError) => {
+      txs.forEach((tx) => {
+        this.sendTransaction(super.send(tx.tx, tx.signers, opts), {
+          onSuccess,
+          onError,
+        });
       });
     });
   }
