@@ -1932,10 +1932,10 @@
     bn.js "^5.1.2"
     buffer-layout "^1.2.0"
 
-"@project-serum/swap-ui@^0.1.0-alpha.10":
-  version "0.1.0-alpha.10"
-  resolved "https://registry.yarnpkg.com/@project-serum/swap-ui/-/swap-ui-0.1.0-alpha.10.tgz#6ef594fb241055115263a686a07745497780885d"
-  integrity sha512-J881a0cdUE9AGefmN2kOSDTqQ2DRRdU/Q+krDsess8+jYW+Ot178eRqD92UzwL5eFkR3cTI5y5leiKY4/QhXdg==
+"@project-serum/swap-ui@^0.1.0-alpha.11":
+  version "0.1.0-alpha.11"
+  resolved "https://registry.yarnpkg.com/@project-serum/swap-ui/-/swap-ui-0.1.0-alpha.11.tgz#e524ffccf57ad0e358b6bcebfb728f9321e23a04"
+  integrity sha512-FlrnbPsYJxBtNAk0zReY+Ua3tY9LQv3oc7S9ofBNUddMoDfZSumvw5SIW9nxFa1+ZqHbtnWUdrUfB9t6+LIXHQ==
   dependencies:
     "@project-serum/serum" "^0.13.34"
     "@project-serum/swap" "^0.1.0-alpha.14"
