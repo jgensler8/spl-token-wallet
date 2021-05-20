@@ -78,13 +78,19 @@ class NotifyingProvider extends Provider {
     txs: Array<{ tx: Transaction, signers: Array<Signer | undefined> }>,
     opts?: ConfirmOptions,
   ): Promise<Array<TransactionSignature>> {
-    return new Promise((onSuccess, onError) => {
-      txs.forEach((tx) => {
-        this.sendTransaction(super.send(tx.tx, tx.signers, opts), {
-          onSuccess,
-          onError,
-        });
-      });
+    return new Promise(async (resolve, onError) => {
+      let txSigs: Array<TransactionSignature> = [];
+      for (const tx of txs) {
+        txSigs.push(
+          await new Promise((onSuccess) => {
+            this.sendTransaction(super.send(tx.tx, tx.signers, opts), {
+              onSuccess,
+              onError,
+            });
+          }),
+        );
+      }
+      resolve(txSigs);
     });
   }
 }
