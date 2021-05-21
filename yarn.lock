@@ -1932,15 +1932,14 @@
     bn.js "^5.1.2"
     buffer-layout "^1.2.0"
 
-"@project-serum/swap-ui@^0.1.0-alpha.17":
-  version "0.1.0-alpha.17"
-  resolved "https://registry.yarnpkg.com/@project-serum/swap-ui/-/swap-ui-0.1.0-alpha.17.tgz#956725edbedd72de9d58119fe17542e59d397790"
-  integrity sha512-JsUl2zACelziMg8cNd8N7x5yZ/zDWcx9kTHwEs43LCwJOBDH1AA5OTumrd5BHa4gYfNGluef9zvnYxfCi2Ampw==
+"@project-serum/swap-ui@^0.1.0-alpha.18":
+  version "0.1.0-alpha.18"
+  resolved "https://registry.yarnpkg.com/@project-serum/swap-ui/-/swap-ui-0.1.0-alpha.18.tgz#c87c0c75e8caaa5a3a69d77b42439273b6f8094a"
+  integrity sha512-u8XLUE7B6lo5civOX5Bnk0noihD3hOUTHYQtv67YQpeIanpXKBXWsHrZXOoN93ubgjrBVrPWI5ggXITka6YrRg==
   dependencies:
     "@project-serum/serum" "^0.13.34"
     "@project-serum/swap" "^0.1.0-alpha.14"
     "@solana/spl-token" "^0.1.4"
-    react-async-hook "^3.6.2"
 
 "@project-serum/swap@^0.1.0-alpha.14":
   version "0.1.0-alpha.14"
