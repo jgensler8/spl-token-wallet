@@ -36,6 +36,7 @@ import { Badge } from '@material-ui/core';
 import { useConnectedWallets } from '../utils/connected-wallets';
 import { usePage } from '../utils/page';
 import { MonetizationOn, OpenInNew } from '@material-ui/icons';
+import { useAuth0 } from "@auth0/auth0-react";
 
 const useStyles = makeStyles((theme) => ({
   content: {
@@ -97,6 +98,7 @@ function NavigationButtons() {
       isExtension && <ConnectionsButton />,
       <WalletSelector />,
       <NetworkSelector />,
+      <LoginButton />,
     ];
   } else if (page === 'connections') {
     elements = [<WalletButton />];
@@ -121,6 +123,20 @@ function ExpandButton() {
       </IconButton>
     </Tooltip>
   );
+}
+
+function LoginButton() {
+  const classes = useStyles();
+  const { loginWithRedirect } = useAuth0();
+  const onClick = () => { console.log("TOOD"); loginWithRedirect(); };
+
+  return (
+    <>
+      <Button color="inherit" onClick={onClick} className={classes.button}>
+        Login With Auth0
+      </Button>
+    </>
+  )
 }
 
 function WalletButton() {

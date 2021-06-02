@@ -19,6 +19,7 @@ import LoginPage from './pages/LoginPage';
 import ConnectionsPage from './pages/ConnectionsPage';
 import { isExtension } from './utils/utils';
 import { PageProvider, usePage } from './utils/page';
+import { Auth0Provider } from "@auth0/auth0-react";
 
 export default function App() {
   // TODO: add toggle for dark mode
@@ -59,17 +60,25 @@ export default function App() {
 
   return (
     <Suspense fallback={<LoadingIndicator />}>
-      <ThemeProvider theme={theme}>
-        <CssBaseline />
+      <Auth0Provider
+        domain="authwallet.us.auth0.com"
+        clientId="3RaU8zdKCzpsKApaTDvFhP6ipL80KYcC"
+        redirectUri={window.location.origin + "/index.html"}
+        audience="https://authwallet.us.auth0.com/api/v2/"
+        scope="read:current_user update:current_user_metadata"
+      >
+        <ThemeProvider theme={theme}>
+          <CssBaseline />
 
-        <ConnectionProvider>
-          <TokenRegistryProvider>
-            <SnackbarProvider maxSnack={5} autoHideDuration={8000}>
-              <WalletProvider>{appElement}</WalletProvider>
-            </SnackbarProvider>
-          </TokenRegistryProvider>
-        </ConnectionProvider>
-      </ThemeProvider>
+          <ConnectionProvider>
+            <TokenRegistryProvider>
+              <SnackbarProvider maxSnack={5} autoHideDuration={8000}>
+                <WalletProvider>{appElement}</WalletProvider>
+              </SnackbarProvider>
+            </TokenRegistryProvider>
+          </ConnectionProvider>
+        </ThemeProvider>
+      </Auth0Provider>
     </Suspense>
   );
 }

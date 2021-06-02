@@ -1,4 +1,4 @@
-import React, { useEffect, useState } from 'react';
+import React, { useEffect, useState, useRef } from 'react';
 import {
   generateMnemonicAndSeed,
   useHasLockedMnemonicAndSeed,
@@ -29,10 +29,159 @@ import { useCallAsync } from '../utils/notifications';
 import Link from '@material-ui/core/Link';
 import { validateMnemonic } from 'bip39';
 import DialogForm from '../components/DialogForm';
+import { makeStyles } from '@material-ui/core/styles';
+import { useAuth0 } from "@auth0/auth0-react";
+
+const useStyles = makeStyles((theme) => ({
+  content: {
+    flexGrow: 1,
+    paddingBottom: theme.spacing(3),
+    [theme.breakpoints.up(theme.ext)]: {
+      paddingTop: theme.spacing(3),
+      paddingLeft: theme.spacing(1),
+      paddingRight: theme.spacing(1),
+    },
+  },
+  title: {
+    flexGrow: 1,
+  },
+  button: {
+    marginLeft: theme.spacing(1),
+  },
+  menuItemIcon: {
+    minWidth: 32,
+  },
+  badge: {
+    backgroundColor: theme.palette.success.main,
+    color: theme.palette.text.main,
+    height: 16,
+    width: 16,
+  },
+}));
 
 export default function LoginPage() {
+  const classes = useStyles();
+  const privateKeyInputRef = useRef();
   const [restore, setRestore] = useState(false);
   const [hasLockedMnemonicAndSeed, loading] = useHasLockedMnemonicAndSeed();
+  const { user, isAuthenticated, isLoading, loginWithRedirect, getAccessTokenSilently } = useAuth0();
+  const onClick = () => { loginWithRedirect(); };
+  const downloadKey = (key_bytes) => {
+    const url = window.URL.createObjectURL(new Blob([key_bytes]));
+    const link = document.createElement('a');
+    link.href = url;
+    link.setAttribute('download', 'auth_wallet_private_key.raw');
+    document.body.appendChild(link);
+    link.click();
+  }
+  const iv = window.crypto.getRandomValues(new Uint8Array(12));
+  const encryption_params = {
+    name: "AES-GCM",
+    length: 256,
+    // TODO: this should be unique (or just switch to RSA)
+    iv: iv,
+  };
+  const create_and_download_private_key = async () => {
+    let key = await window.crypto.subtle.generateKey(
+      // {
+      //   name: "RSA-OAEP",
+      //   modulusLength: 4096,
+      //   publicExponent: new Uint8Array([1, 0, 1]),
+      //   hash: "SHA-256"
+      // },
+      encryption_params,
+      true,
+      ["encrypt", "decrypt"]
+    )
+    console.log(key);
+    let exported = await window.crypto.subtle.exportKey("raw", key);
+    console.log(exported);
+    downloadKey(exported)
+  }
+  const login_with_private_key = async (event) => {
+    // decrypt key from event
+    var file = event.target.files[0];
+    let file_content = await file.arrayBuffer();
+    let key = await window.crypto.subtle.importKey("raw", file_content,
+      // {
+      //   name: "RSA-OAEP",
+      //   modulusLength: 4096,
+      //   publicExponent: new Uint8Array([1, 0, 1]),
+      //   hash: "SHA-256"
+      // },
+      encryption_params,
+      true,
+      ["encrypt", "decrypt"]
+    );
+    console.log(key);
+
+    // fetch metadata from Auth0
+    const domain = "authwallet.us.auth0.com";
+    const accessToken = await getAccessTokenSilently({
+      audience: `https://${domain}/api/v2/`,
+      scope: "read:current_user update:current_user_metadata",
+    }).catch(error => {
+      console.log("failed to get access token silently")
+      console.log(error)
+    });
+    const userDetailsByIdUrl = `https://${domain}/api/v2/users/${user.sub}`;
+    const metadataResponse = await fetch(userDetailsByIdUrl, {
+      headers: {
+        Authorization: `Bearer ${accessToken}`,
+      },
+    });
+    const { user_metadata } = await metadataResponse.json();
+    console.log(user_metadata);
+
+    // if mnemonic doesn't exist, provision and save it
+    let mnemonic_seed = {};
+    if(user_metadata && user_metadata.encrypted && user_metadata.encrypted.length > 0) {
+      console.log("decrypting")
+      encryption_params.iv = Uint8Array.from(user_metadata.iv);
+      const encrypted = Uint8Array.from(user_metadata.encrypted)
+      const array = encrypted;
+      const decrypted = await window.crypto.subtle.decrypt(encryption_params, key, array);
+      console.log(decrypted)
+      const decoder = new TextDecoder();
+      const decoded = decoder.decode(decrypted);
+      mnemonic_seed = JSON.parse(decoded);
+    } else {
+      mnemonic_seed = await generateMnemonicAndSeed();
+      const encoder = new TextEncoder();
+      const array = encoder.encode(JSON.stringify(mnemonic_seed));
+      const encrypted = await window.crypto.subtle.encrypt(encryption_params, key, array);
+      const metadataResponse = await fetch(userDetailsByIdUrl, {
+        method: "PATCH",
+        headers: {
+          Authorization: `Bearer ${accessToken}`,
+          'Content-Type': "application/json",
+        },
+        body: JSON.stringify({
+          "user_metadata": {
+            "iv": Array.from(iv),
+            "encrypted": Array.from(new Uint8Array(encrypted))
+          },
+        })
+      });
+    }
+
+    console.log(mnemonic_seed)
+
+    // "app_accounts": {
+    //   "app1": {
+    //     "my_app_1": {
+    //       "link_data": {
+    //         "mnemonic": "",
+    //         "seed": ""
+    //       }
+    //     }
+    //   }
+    // }
+
+    // set mnemonic from default Key
+    storeMnemonicAndSeed(mnemonic_seed.mnemonic, mnemonic_seed.seed);
+    storeAppAccount()
+  }
 
   if (loading) {
     return null;
@@ -40,17 +189,17 @@ export default function LoginPage() {
 
   return (
     <Container maxWidth="sm">
-      {restore ? (
-        <RestoreWalletForm goBack={() => setRestore(false)} />
-      ) : (
-        <>
-          {hasLockedMnemonicAndSeed ? <LoginForm /> : <CreateWalletForm />}
-          <br />
-          <Link style={{ cursor: 'pointer' }} onClick={() => setRestore(true)}>
-            Restore existing wallet
-          </Link>
-        </>
-      )}
+      {isAuthenticated ? <>
+        <Button onClick={create_and_download_private_key}>Create and Download New RSA Private Key</Button>
+        <div>
+          <label for="file">Select a file to Login</label>
+          <input onChange={login_with_private_key} type="file" id="file" ref={privateKeyInputRef} />
+        </div>
+      </> : <>
+        <Button color="inherit" onClick={onClick} className={classes.button}>
+          Login With Auth0
+        </Button>
+      </>}
     </Container>
   );
 }
@@ -122,57 +271,7 @@ function SeedWordsForm({ mnemonicAndSeed, goForward }) {
           <Typography paragraph>
             Create a new wallet to hold Solana and SPL tokens.
           </Typography>
-          <Typography>
-            Please write down the following twenty four words and keep them in a
-            safe place:
-          </Typography>
-          {mnemonicAndSeed ? (
-            <TextField
-              variant="outlined"
-              fullWidth
-              multiline
-              margin="normal"
-              value={mnemonicAndSeed.mnemonic}
-              label="Seed Words"
-              onFocus={(e) => e.currentTarget.select()}
-            />
-          ) : (
-            <LoadingIndicator />
-          )}
-          <Typography paragraph>
-            Your private keys are only stored on your current computer or device.
-            You will need these words to restore your wallet if your browser's
-            storage is cleared or your device is damaged or lost.
-          </Typography>
-          <Typography paragraph>
-            By default, sollet will use <code>m/44'/501'/0'/0'</code> as the
-            derivation path for the main wallet. To use an alternative path, try
-            restoring an existing wallet.
-          </Typography>
-          <FormControlLabel
-            control={
-              <Checkbox
-                checked={confirmed}
-                disabled={!mnemonicAndSeed}
-                onChange={(e) => setConfirmed(e.target.checked)}
-              />
-            }
-            label="I have saved these words in a safe place."
-          />
-          <Typography paragraph>
-          <Button variant="contained" color="primary" onClick={() => {
-            downloadMnemonic(mnemonicAndSeed?.mnemonic);
-            setDownloaded(true);
-          }}>
-            Download Backup Mnemonic File (Required)
-          </Button>
-          </Typography>
         </CardContent>
-        <CardActions style={{ justifyContent: 'flex-end' }}>
-          <Button color="primary" disabled={!confirmed || !downloaded} onClick={() => setShowDialog(true)}>
-            Continue
-          </Button>
-        </CardActions>
       </Card>
       <DialogForm
         open={showDialog}
@@ -359,9 +458,9 @@ function RestoreWalletForm({ goBack }) {
               wallets can be optionally connected after a web wallet is created.
             </Typography>
             {displayInvalidMnemonic && (
-               <Typography fontWeight="fontWeightBold" style={{ color: 'red' }}>
-                 Mnemonic validation failed. Please enter a valid BIP 39 seed phrase.
-               </Typography>
+              <Typography fontWeight="fontWeightBold" style={{ color: 'red' }}>
+                Mnemonic validation failed. Please enter a valid BIP 39 seed phrase.
+              </Typography>
             )}
             <TextField
               variant="outlined"

@@ -72,7 +72,7 @@ export default function PopupPage({ opener }) {
     (message) => {
       if (isExtension) {
         chrome.runtime.sendMessage({
-          channel: 'sollet_extension_background_channel',
+          channel: 'shallot_extension_background_channel',
           data: message,
         });
       } else {

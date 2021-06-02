@@ -25,6 +25,7 @@ function launchPopup(message, sender, sendResponse) {
 }
 
 function handleConnect(message, sender, sendResponse) {
+  console.log("connect")
   chrome.storage.local.get('connectedWallets', (result) => {
     const connectedWallet = (result.connectedWallets || {})[sender.origin];
     if (!connectedWallet) {
@@ -52,22 +53,28 @@ function handleDisconnect(message, sender, sendResponse) {
   });
 }
 
+function handleConnectProvision(message, sender, sendResponse) {
+  console.log("connect_provision")
+}
+
 chrome.runtime.onMessage.addListener((message, sender, sendResponse) => {
-  if (message.channel === 'sollet_contentscript_background_channel') {
+  if (message.channel === 'shallot_contentscript_background_channel') {
     if (message.data.method === 'connect') {
       handleConnect(message, sender, sendResponse);
     } else if (message.data.method === 'disconnect') {
       handleDisconnect(message, sender, sendResponse);
+    } else if (message.data.method === 'connect_provision') {
+      handleConnectProvision(messge, sender, sendResponse);
     } else {
       launchPopup(message, sender, sendResponse);
     }
     // keeps response channel open
     return true;
-  } else if (message.channel === 'sollet_extension_background_channel') {
+  } else if (message.channel === 'shallot_extension_background_channel') {
     const responseHandler = responseHandlers.get(message.data.id);
     responseHandlers.delete(message.data.id);
     responseHandler(message.data);
-  } else if (message.channel === 'sollet_extension_mnemonic_channel') {
+  } else if (message.channel === 'shallot_extension_mnemonic_channel') {
     if (message.method === 'set') {
       unlockedMnemonic = message.data;
     } else if (message.method === 'get') {
