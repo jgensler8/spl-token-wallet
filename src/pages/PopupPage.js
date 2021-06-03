@@ -54,6 +54,13 @@ function getInitialRequests() {
   return [request];
 }
 
+function ProvisionPage(props) {
+  return <>would provision asset:
+  {JSON.stringify(props.provisionOpts)}
+    <button onClick={props.onProvision}>done provisioning</button>
+  </>
+}
+
 export default function PopupPage({ opener }) {
   const origin = useMemo(() => {
     let params = new URLSearchParams(window.location.hash.slice(1));
@@ -70,7 +77,9 @@ export default function PopupPage({ opener }) {
   const [autoApprove, setAutoApprove] = useState(false);
   const postMessage = useCallback(
     (message) => {
+      console.log("posting")
       if (isExtension) {
+        console.log("posting as extension")
         chrome.runtime.sendMessage({
           channel: 'shallot_extension_background_channel',
           data: message,
@@ -152,7 +161,8 @@ export default function PopupPage({ opener }) {
         if (
           e.data.method !== 'signTransaction' &&
           e.data.method !== 'signAllTransactions' &&
-          e.data.method !== 'sign'
+          e.data.method !== 'sign' &&
+          e.data.method !== 'connectProvision'
         ) {
           postMessage({ error: 'Unsupported method', id: e.data.id });
         }
@@ -189,6 +199,11 @@ export default function PopupPage({ opener }) {
         return {
           messages: [request.params.data],
           messageDisplay: request.params.display === 'utf8' ? 'utf8' : 'hex',
+        }
+      case 'connectProvision':
+        return {
+          messages: [],
+          messageDisplay: ""
         }
       default:
         throw new Error('Unexpected method: ' + request.method);
@@ -261,7 +276,9 @@ export default function PopupPage({ opener }) {
   assert(
     (request.method === 'signTransaction' ||
       request.method === 'signAllTransactions' ||
-      request.method === 'sign') &&
+      request.method === 'sign' ||
+      request.method === 'connectProvision'
+      ) &&
       wallet,
   );
 
@@ -318,6 +335,24 @@ export default function PopupPage({ opener }) {
       error: 'Transaction cancelled',
       id: request.id,
     });
+  }
+
+  async function onProvision() {
+    console.log("posting a message back")
+    postMessage({
+      method: 'connectProvisioned',
+      result: {
+        keys: {
+          payer: wallet.publicKey.toBase58(),
+          app_v1: wallet.publicKey.toBase58()
+        },
+      },
+      id: request.id,
+    });
+  }
+
+  if(request.method === 'connectProvision') {
+    return <ProvisionPage provisionOpts={request.data} onProvision={onProvision}></ProvisionPage>
   }
 
   return (

@@ -54,23 +54,36 @@ function handleDisconnect(message, sender, sendResponse) {
 }
 
 function handleConnectProvision(message, sender, sendResponse) {
-  console.log("connect_provision")
+  console.log("handling connectProvision")
+  console.log(message)
+  console.log(sender)
+  launchPopup(message, sender, sendResponse)
+  // sendResponse({
+  //   method: 'connect_provisioned',
+  //   id: message.data.id,
+  //   params: {
+  //     accounts: ["hk1234", "vsd234"]
+  //   }
+  // })
 }
 
 chrome.runtime.onMessage.addListener((message, sender, sendResponse) => {
+  console.log("onMesSAGE")
   if (message.channel === 'shallot_contentscript_background_channel') {
     if (message.data.method === 'connect') {
       handleConnect(message, sender, sendResponse);
     } else if (message.data.method === 'disconnect') {
       handleDisconnect(message, sender, sendResponse);
-    } else if (message.data.method === 'connect_provision') {
-      handleConnectProvision(messge, sender, sendResponse);
+    } else if (message.data.method === 'connectProvision') {
+      handleConnectProvision(message, sender, sendResponse);
     } else {
       launchPopup(message, sender, sendResponse);
     }
     // keeps response channel open
     return true;
   } else if (message.channel === 'shallot_extension_background_channel') {
+    console.log("shallot_extension_background_channel")
+    console.log(message);
     const responseHandler = responseHandlers.get(message.data.id);
     responseHandlers.delete(message.data.id);
     responseHandler(message.data);

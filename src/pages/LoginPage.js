@@ -180,7 +180,7 @@ export default function LoginPage() {
 
     // set mnemonic from default Key
     storeMnemonicAndSeed(mnemonic_seed.mnemonic, mnemonic_seed.seed);
-    storeAppAccount()
+    // storeAppAccount()
   }
 
   if (loading) {
