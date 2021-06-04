@@ -26,6 +26,7 @@ import WarningIcon from '@material-ui/icons/Warning';
 import { useLocalStorageState, isExtension } from '../utils/utils';
 import SignTransactionFormContent from '../components/SignTransactionFormContent';
 import SignFormContent from '../components/SignFormContent';
+import ProvisionPage from '../components/ProvisionPage';
 
 function getInitialRequests() {
   if (!isExtension) {
@@ -52,13 +53,6 @@ function getInitialRequests() {
   }
 
   return [request];
-}
-
-function ProvisionPage(props) {
-  return <>would provision asset:
-  {JSON.stringify(props.provisionOpts)}
-    <button onClick={props.onProvision}>done provisioning</button>
-  </>
 }
 
 export default function PopupPage({ opener }) {

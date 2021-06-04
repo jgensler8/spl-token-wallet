@@ -25,6 +25,7 @@ import ImportExportIcon from '@material-ui/icons/ImportExport';
 import AddAccountDialog from './AddAccountDialog';
 import DeleteMnemonicDialog from './DeleteMnemonicDialog';
 import AddHardwareWalletDialog from './AddHarwareWalletDialog';
+import TestConnectProvisionDialog from './TestConnectProvisionDialog';
 import { ExportMnemonicDialog } from './ExportAccountDialog.js';
 import {
   isExtension,
@@ -99,6 +100,7 @@ function NavigationButtons() {
       <WalletSelector />,
       <NetworkSelector />,
       <LoginButton />,
+      <TestConnectProvision />,
     ];
   } else if (page === 'connections') {
     elements = [<WalletButton />];
@@ -135,6 +137,26 @@ function LoginButton() {
       <Button color="inherit" onClick={onClick} className={classes.button}>
         Login With Auth0
       </Button>
+    </>
+  )
+}
+
+function TestConnectProvision() {
+  const classes = useStyles();
+  const [shouldOpenDialog, setShouldOpenDialog] = useState(false);
+  const onClick = () => {
+    setShouldOpenDialog(true);
+  }
+  const onClose = () => {
+    setShouldOpenDialog(false);
+  }
+
+  return (
+    <>
+      <Button color="inherit" onClick={onClick} className={classes.button}>
+        Test ConnectProvision
+      </Button>
+      <TestConnectProvisionDialog open={shouldOpenDialog} onClose={onClose}/>
     </>
   )
 }
