@@ -71,9 +71,7 @@ export default function PopupPage({ opener }) {
   const [autoApprove, setAutoApprove] = useState(false);
   const postMessage = useCallback(
     (message) => {
-      console.log("posting")
       if (isExtension) {
-        console.log("posting as extension")
         chrome.runtime.sendMessage({
           channel: 'shallot_extension_background_channel',
           data: message,
@@ -332,7 +330,7 @@ export default function PopupPage({ opener }) {
   }
 
   async function onProvision() {
-    console.log("posting a message back")
+    popRequest();
     postMessage({
       method: 'connectProvisioned',
       result: {
@@ -346,7 +344,7 @@ export default function PopupPage({ opener }) {
   }
 
   if(request.method === 'connectProvision') {
-    return <ProvisionPage provisionOpts={request.data} onProvision={onProvision}></ProvisionPage>
+    return <ProvisionPage accounts={request.params.accounts} onProvision={onProvision}></ProvisionPage>
   }
 
   return (

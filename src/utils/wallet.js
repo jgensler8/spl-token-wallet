@@ -152,6 +152,7 @@ export function WalletProvider({ children }) {
     seed,
     importsEncryptionKey,
     derivationPath,
+    names,
   }] = useUnlockedMnemonicAndSeed();
   const { enqueueSnackbar } = useSnackbar();
   const connection = useConnection();
@@ -170,7 +171,7 @@ export function WalletProvider({ children }) {
   const [_hardwareWalletAccount, setHardwareWalletAccount] = useState(null);
 
   // `walletCount` is the number of HD wallets.
-  const [walletCount, setWalletCount] = useLocalStorageState('walletCount', 1);
+  const walletCount = names.length
 
   if (walletSelector.ledger && !_hardwareWalletAccount) {
     walletSelector = DEFAULT_WALLET_SELECTOR;
@@ -241,6 +242,7 @@ export function WalletProvider({ children }) {
     setWalletSelector,
     enqueueSnackbar,
     derivationPath,
+    names,
   ]);
   function addAccount({ name, importedAccount, ledger }) {
     if (importedAccount === undefined) {
@@ -356,6 +358,8 @@ export function WalletProvider({ children }) {
         derivationPath,
         hardwareWalletAccount,
         setHardwareWalletAccount,
+        setWalletNames,
+        setWalletCount,
       }}
     >
       {children}

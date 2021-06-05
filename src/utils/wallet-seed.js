@@ -102,12 +102,14 @@ function setUnlockedMnemonicAndSeed(
   seed,
   importsEncryptionKey,
   derivationPath,
+  names,
 ) {
   const data = {
     mnemonic,
     seed,
     importsEncryptionKey,
     derivationPath,
+    names,
   };
   unlockedMnemonicAndSeed = Promise.resolve(data);
   walletSeedChanged.emit('change', data);
@@ -118,8 +120,9 @@ export async function storeMnemonicAndSeed(
   seed,
   password,
   derivationPath,
+  names,
 ) {
-  const plaintext = JSON.stringify({ mnemonic, seed, derivationPath });
+  const plaintext = JSON.stringify({ mnemonic, seed, derivationPath, names });
   if (password) {
     const salt = randomBytes(16);
     const kdf = 'pbkdf2';
@@ -158,6 +161,7 @@ export async function storeMnemonicAndSeed(
     seed,
     importsEncryptionKey,
     derivationPath,
+    names,
   );
 }
 
@@ -178,7 +182,7 @@ export async function loadMnemonicAndSeed(password, stayLoggedIn) {
     throw new Error('Incorrect password');
   }
   const decodedPlaintext = Buffer.from(plaintext).toString();
-  const { mnemonic, seed, derivationPath } = JSON.parse(decodedPlaintext);
+  const { mnemonic, seed, derivationPath, names } = JSON.parse(decodedPlaintext);
   if (stayLoggedIn) {
     if (isExtension) {
       chrome.runtime.sendMessage({
@@ -196,6 +200,7 @@ export async function loadMnemonicAndSeed(password, stayLoggedIn) {
     seed,
     importsEncryptionKey,
     derivationPath,
+    names,
   );
   return { mnemonic, seed, derivationPath };
 }
@@ -214,7 +219,7 @@ async function deriveEncryptionKey(password, salt, iterations, digest) {
 }
 
 export function lockWallet() {
-  setUnlockedMnemonicAndSeed(null, null, null, null);
+  setUnlockedMnemonicAndSeed(null, null, null, null, null);
 }
 
 // Returns the 32 byte key used to encrypt imported private keys.

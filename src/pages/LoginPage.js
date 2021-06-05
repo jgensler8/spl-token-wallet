@@ -31,6 +31,7 @@ import { validateMnemonic } from 'bip39';
 import DialogForm from '../components/DialogForm';
 import { makeStyles } from '@material-ui/core/styles';
 import { useAuth0 } from "@auth0/auth0-react";
+import { useWallet } from '../utils/wallet';
 
 const useStyles = makeStyles((theme) => ({
   content: {
@@ -64,6 +65,7 @@ export default function LoginPage() {
   const privateKeyInputRef = useRef();
   const [restore, setRestore] = useState(false);
   const [hasLockedMnemonicAndSeed, loading] = useHasLockedMnemonicAndSeed();
+  const wallet = useWallet();
   const { user, isAuthenticated, isLoading, loginWithRedirect, getAccessTokenSilently } = useAuth0();
   const onClick = () => { loginWithRedirect(); };
   const downloadKey = (key_bytes) => {
@@ -133,9 +135,17 @@ export default function LoginPage() {
     const { user_metadata } = await metadataResponse.json();
     console.log(user_metadata);
 
+    /*
+    "accounts": [{
+      "mnemonic": ""
+      "seed": "",
+      "names": ["default", "data_1"]
+    }]
+    */
+
     // if mnemonic doesn't exist, provision and save it
-    let mnemonic_seed = {};
-    if(user_metadata && user_metadata.encrypted && user_metadata.encrypted.length > 0) {
+    let account_layout = { accounts: []};
+    if (user_metadata && user_metadata.encrypted && user_metadata.encrypted.length > 0) {
       console.log("decrypting")
       encryption_params.iv = Uint8Array.from(user_metadata.iv);
       const encrypted = Uint8Array.from(user_metadata.encrypted)
@@ -144,11 +154,14 @@ export default function LoginPage() {
       console.log(decrypted)
       const decoder = new TextDecoder();
       const decoded = decoder.decode(decrypted);
-      mnemonic_seed = JSON.parse(decoded);
+      account_layout = JSON.parse(decoded);
     } else {
-      mnemonic_seed = await generateMnemonicAndSeed();
+      let mnemonic_seed = await generateMnemonicAndSeed();
+      mnemonic_seed.names = ["default"]
+      account_layout.accounts.push(mnemonic_seed);
+
       const encoder = new TextEncoder();
-      const array = encoder.encode(JSON.stringify(mnemonic_seed));
+      const array = encoder.encode(JSON.stringify(account_layout));
       const encrypted = await window.crypto.subtle.encrypt(encryption_params, key, array);
       const metadataResponse = await fetch(userDetailsByIdUrl, {
         method: "PATCH",
@@ -165,22 +178,10 @@ export default function LoginPage() {
       });
     }
 
-    console.log(mnemonic_seed)
-
-    // "app_accounts": {
-    //   "app1": {
-    //     "my_app_1": {
-    //       "link_data": {
-    //         "mnemonic": "",
-    //         "seed": ""
-    //       }
-    //     }
-    //   }
-    // }
+    console.log(account_layout)
 
     // set mnemonic from default Key
-    storeMnemonicAndSeed(mnemonic_seed.mnemonic, mnemonic_seed.seed);
-    // storeAppAccount()
+    storeMnemonicAndSeed(account_layout.accounts[0].mnemonic, account_layout.accounts[0].seed, undefined, undefined, account_layout.accounts[0].names);
   }
 
   if (loading) {
