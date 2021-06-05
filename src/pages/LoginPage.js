@@ -32,6 +32,7 @@ import DialogForm from '../components/DialogForm';
 import { makeStyles } from '@material-ui/core/styles';
 import { useAuth0 } from "@auth0/auth0-react";
 import { useWallet } from '../utils/wallet';
+import { useAuth0Account } from '../utils/Auth0AccountProvider';
 
 const useStyles = makeStyles((theme) => ({
   content: {
@@ -65,9 +66,27 @@ export default function LoginPage() {
   const privateKeyInputRef = useRef();
   const [restore, setRestore] = useState(false);
   const [hasLockedMnemonicAndSeed, loading] = useHasLockedMnemonicAndSeed();
-  const wallet = useWallet();
   const { user, isAuthenticated, isLoading, loginWithRedirect, getAccessTokenSilently } = useAuth0();
   const onClick = () => { loginWithRedirect(); };
+  const auth0AcccountContext = useAuth0Account();
+  useEffect(() => {
+    if(user) {
+      auth0AcccountContext.setAuth0Lib({user, getAccessTokenSilently})
+    }
+  }, [user])
+  useEffect(() => {
+    if (auth0AcccountContext.account !== undefined) {
+      console.log(auth0AcccountContext)
+      // set mnemonic from default Key
+      storeMnemonicAndSeed(
+        auth0AcccountContext.account[0].mnemonic,
+        auth0AcccountContext.account[0].seed,
+        undefined,
+        undefined,
+        auth0AcccountContext.account[0].names
+      );
+    }
+  }, [auth0AcccountContext])
   const downloadKey = (key_bytes) => {
     const url = window.URL.createObjectURL(new Blob([key_bytes]));
     const link = document.createElement('a');
@@ -115,73 +134,7 @@ export default function LoginPage() {
       true,
       ["encrypt", "decrypt"]
     );
-    console.log(key);
-
-    // fetch metadata from Auth0
-    const domain = "authwallet.us.auth0.com";
-    const accessToken = await getAccessTokenSilently({
-      audience: `https://${domain}/api/v2/`,
-      scope: "read:current_user update:current_user_metadata",
-    }).catch(error => {
-      console.log("failed to get access token silently")
-      console.log(error)
-    });
-    const userDetailsByIdUrl = `https://${domain}/api/v2/users/${user.sub}`;
-    const metadataResponse = await fetch(userDetailsByIdUrl, {
-      headers: {
-        Authorization: `Bearer ${accessToken}`,
-      },
-    });
-    const { user_metadata } = await metadataResponse.json();
-    console.log(user_metadata);
-
-    /*
-    "accounts": [{
-      "mnemonic": ""
-      "seed": "",
-      "names": ["default", "data_1"]
-    }]
-    */
-
-    // if mnemonic doesn't exist, provision and save it
-    let account_layout = { accounts: []};
-    if (user_metadata && user_metadata.encrypted && user_metadata.encrypted.length > 0) {
-      console.log("decrypting")
-      encryption_params.iv = Uint8Array.from(user_metadata.iv);
-      const encrypted = Uint8Array.from(user_metadata.encrypted)
-      const array = encrypted;
-      const decrypted = await window.crypto.subtle.decrypt(encryption_params, key, array);
-      console.log(decrypted)
-      const decoder = new TextDecoder();
-      const decoded = decoder.decode(decrypted);
-      account_layout = JSON.parse(decoded);
-    } else {
-      let mnemonic_seed = await generateMnemonicAndSeed();
-      mnemonic_seed.names = ["default"]
-      account_layout.accounts.push(mnemonic_seed);
-
-      const encoder = new TextEncoder();
-      const array = encoder.encode(JSON.stringify(account_layout));
-      const encrypted = await window.crypto.subtle.encrypt(encryption_params, key, array);
-      const metadataResponse = await fetch(userDetailsByIdUrl, {
-        method: "PATCH",
-        headers: {
-          Authorization: `Bearer ${accessToken}`,
-          'Content-Type': "application/json",
-        },
-        body: JSON.stringify({
-          "user_metadata": {
-            "iv": Array.from(iv),
-            "encrypted": Array.from(new Uint8Array(encrypted))
-          },
-        })
-      });
-    }
-
-    console.log(account_layout)
-
-    // set mnemonic from default Key
-    storeMnemonicAndSeed(account_layout.accounts[0].mnemonic, account_layout.accounts[0].seed, undefined, undefined, account_layout.accounts[0].names);
+    auth0AcccountContext.setKey(key)
   }
 
   if (loading) {

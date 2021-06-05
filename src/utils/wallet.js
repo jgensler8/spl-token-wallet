@@ -172,6 +172,7 @@ export function WalletProvider({ children }) {
 
   // `walletCount` is the number of HD wallets.
   const walletCount = names.length
+  const setWalletCount = (count) => {};
 
   if (walletSelector.ledger && !_hardwareWalletAccount) {
     walletSelector = DEFAULT_WALLET_SELECTOR;
@@ -246,8 +247,8 @@ export function WalletProvider({ children }) {
   ]);
   function addAccount({ name, importedAccount, ledger }) {
     if (importedAccount === undefined) {
-      name && localStorage.setItem(`name${walletCount}`, name);
-      setWalletCount(walletCount + 1);
+      // name && localStorage.setItem(`name${walletCount}`, name);
+      // setWalletCount(walletCount + 1);
     } else {
       const nonce = nacl.randomBytes(nacl.secretbox.nonceLength);
       const plaintext = importedAccount.secretKey;
@@ -263,14 +264,7 @@ export function WalletProvider({ children }) {
     }
   }
 
-  const getWalletNames = () => {
-    return JSON.stringify(
-      [...Array(walletCount).keys()].map((idx) =>
-        localStorage.getItem(`name${idx}`),
-      ),
-    );
-  };
-  const [walletNames, setWalletNames] = useState(getWalletNames());
+  const [walletNames, setWalletNames] = useState(names);
   function setAccountName(selector, newName) {
     if (selector.importedPubkey && !selector.ledger) {
       let newPrivateKeyImports = { ...privateKeyImports };
@@ -278,7 +272,7 @@ export function WalletProvider({ children }) {
       setPrivateKeyImports(newPrivateKeyImports);
     } else {
       localStorage.setItem(`name${selector.walletIndex}`, newName);
-      setWalletNames(getWalletNames());
+      setWalletNames(names);
     }
   }
 
@@ -288,10 +282,9 @@ export function WalletProvider({ children }) {
     }
 
     const seedBuffer = Buffer.from(seed, 'hex');
-    const derivedAccounts = [...Array(walletCount).keys()].map((idx) => {
+    const derivedAccounts = names.map((name, idx) => {
       let address = getAccountFromSeed(seedBuffer, idx, derivationPath)
         .publicKey;
-      let name = localStorage.getItem(`name${idx}`);
       return {
         selector: {
           walletIndex: idx,
@@ -359,7 +352,7 @@ export function WalletProvider({ children }) {
         hardwareWalletAccount,
         setHardwareWalletAccount,
         setWalletNames,
-        setWalletCount,
+        // setWalletCount,
       }}
     >
       {children}

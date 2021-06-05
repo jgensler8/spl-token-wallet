@@ -44,6 +44,7 @@ const EMPTY_MNEMONIC = {
   seed: null,
   importsEncryptionKey: null,
   derivationPath: null,
+  names: [],
 };
 
 let unlockedMnemonicAndSeed = (async () => {

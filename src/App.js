@@ -20,6 +20,7 @@ import ConnectionsPage from './pages/ConnectionsPage';
 import { isExtension } from './utils/utils';
 import { PageProvider, usePage } from './utils/page';
 import { Auth0Provider } from "@auth0/auth0-react";
+import { Auth0AccoutProvider } from './utils/Auth0AccountProvider';
 
 export default function App() {
   // TODO: add toggle for dark mode
@@ -67,17 +68,19 @@ export default function App() {
         audience="https://authwallet.us.auth0.com/api/v2/"
         scope="read:current_user update:current_user_metadata"
       >
-        <ThemeProvider theme={theme}>
-          <CssBaseline />
+        <Auth0AccoutProvider>
+          <ThemeProvider theme={theme}>
+            <CssBaseline />
 
-          <ConnectionProvider>
-            <TokenRegistryProvider>
-              <SnackbarProvider maxSnack={5} autoHideDuration={8000}>
-                <WalletProvider>{appElement}</WalletProvider>
-              </SnackbarProvider>
-            </TokenRegistryProvider>
-          </ConnectionProvider>
-        </ThemeProvider>
+            <ConnectionProvider>
+              <TokenRegistryProvider>
+                <SnackbarProvider maxSnack={5} autoHideDuration={8000}>
+                  <WalletProvider>{appElement}</WalletProvider>
+                </SnackbarProvider>
+              </TokenRegistryProvider>
+            </ConnectionProvider>
+          </ThemeProvider>
+        </Auth0AccoutProvider>
       </Auth0Provider>
     </Suspense>
   );
