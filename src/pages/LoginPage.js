@@ -61,6 +61,40 @@ const useStyles = makeStyles((theme) => ({
   },
 }));
 
+export const Auth0LoginPage = () => {
+  const classes = useStyles();
+  const { user, isAuthenticated, isLoading, loginWithRedirect, getAccessTokenSilently } = useAuth0();
+  const onClick = () => { loginWithRedirect(); };
+  const auth0AcccountContext = useAuth0Account();
+  console.log(user)
+  console.log(isAuthenticated)
+  useEffect(() => {
+    if (user) {
+      auth0AcccountContext.setAuth0Lib({ user, getAccessTokenSilently })
+    }
+  }, [user])
+  useEffect(() => {
+    if (auth0AcccountContext.account !== undefined) {
+      console.log(auth0AcccountContext)
+      // set mnemonic from default Key
+      storeMnemonicAndSeed(
+        auth0AcccountContext.account[0].mnemonic,
+        auth0AcccountContext.account[0].seed,
+        undefined,
+        undefined,
+        auth0AcccountContext.account[0].names
+      );
+    }
+  }, [auth0AcccountContext])
+  return <Container maxWidth="sm">
+    <>
+      <Button color="inherit" onClick={onClick} className={classes.button}>
+        Login With Auth0
+      </Button>
+    </>
+  </Container>
+}
+
 export default function LoginPage() {
   const classes = useStyles();
   const privateKeyInputRef = useRef();
@@ -70,8 +104,8 @@ export default function LoginPage() {
   const onClick = () => { loginWithRedirect(); };
   const auth0AcccountContext = useAuth0Account();
   useEffect(() => {
-    if(user) {
-      auth0AcccountContext.setAuth0Lib({user, getAccessTokenSilently})
+    if (user) {
+      auth0AcccountContext.setAuth0Lib({ user, getAccessTokenSilently })
     }
   }, [user])
   useEffect(() => {
@@ -143,17 +177,11 @@ export default function LoginPage() {
 
   return (
     <Container maxWidth="sm">
-      {isAuthenticated ? <>
-        <Button onClick={create_and_download_private_key}>Create and Download New RSA Private Key</Button>
-        <div>
-          <label for="file">Select a file to Login</label>
-          <input onChange={login_with_private_key} type="file" id="file" ref={privateKeyInputRef} />
-        </div>
-      </> : <>
-        <Button color="inherit" onClick={onClick} className={classes.button}>
-          Login With Auth0
-        </Button>
-      </>}
+      <Button onClick={create_and_download_private_key}>Create and Download New RSA Private Key</Button>
+      <div>
+        <label htmlFor="file">Select a file to Login</label>
+        <input onChange={login_with_private_key} type="file" id="file" ref={privateKeyInputRef} />
+      </div>
     </Container>
   );
 }

@@ -15,12 +15,12 @@ import { TokenRegistryProvider } from './utils/tokens/names';
 import LoadingIndicator from './components/LoadingIndicator';
 import { SnackbarProvider } from 'notistack';
 import PopupPage from './pages/PopupPage';
-import LoginPage from './pages/LoginPage';
+import LoginPage, { Auth0LoginPage } from './pages/LoginPage';
 import ConnectionsPage from './pages/ConnectionsPage';
 import { isExtension } from './utils/utils';
 import { PageProvider, usePage } from './utils/page';
-import { Auth0Provider } from "@auth0/auth0-react";
-import { Auth0AccoutProvider } from './utils/Auth0AccountProvider';
+import { Auth0Provider, useAuth0 } from "@auth0/auth0-react";
+import { Auth0AccountProvider, useAuth0Account } from './utils/Auth0AccountProvider';
 
 export default function App() {
   // TODO: add toggle for dark mode
@@ -68,7 +68,7 @@ export default function App() {
         audience="https://authwallet.us.auth0.com/api/v2/"
         scope="read:current_user update:current_user_metadata"
       >
-        <Auth0AccoutProvider>
+        <Auth0AccountProvider>
           <ThemeProvider theme={theme}>
             <CssBaseline />
 
@@ -80,16 +80,21 @@ export default function App() {
               </TokenRegistryProvider>
             </ConnectionProvider>
           </ThemeProvider>
-        </Auth0AccoutProvider>
+        </Auth0AccountProvider>
       </Auth0Provider>
     </Suspense>
   );
 }
 
 function PageContents() {
+  const auth0 = useAuth0();
+  const auth0AcccountContext = useAuth0Account();
   const wallet = useWallet();
   const [page] = usePage();
-  if (!wallet) {
+  if (!auth0.isAuthenticated) {
+    return <Auth0LoginPage />
+  }
+  if (!auth0AcccountContext.key || !wallet) {
     return <LoginPage />;
   }
   if (window.opener) {

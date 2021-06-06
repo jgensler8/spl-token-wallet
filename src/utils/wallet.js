@@ -24,10 +24,11 @@ import {
 import { useListener, useLocalStorageState, useRefEqual } from './utils';
 import { useTokenInfo } from './tokens/names';
 import { refreshCache, useAsyncData } from './fetch-loop';
-import { useUnlockedMnemonicAndSeed, walletSeedChanged } from './wallet-seed';
+import { useUnlockedMnemonicAndSeed, storeMnemonicAndSeed, walletSeedChanged } from './wallet-seed';
 import { WalletProviderFactory } from './walletProvider/factory';
 import { getAccountFromSeed } from './walletProvider/localStorage';
 import { useSnackbar } from 'notistack';
+import { useAuth0Account } from './Auth0AccountProvider';
 
 const DEFAULT_WALLET_SELECTOR = {
   walletIndex: 0,
@@ -154,6 +155,7 @@ export function WalletProvider({ children }) {
     derivationPath,
     names,
   }] = useUnlockedMnemonicAndSeed();
+  const { updateAccount } = useAuth0Account();
   const { enqueueSnackbar } = useSnackbar();
   const connection = useConnection();
   const [wallet, setWallet] = useState();
@@ -171,8 +173,8 @@ export function WalletProvider({ children }) {
   const [_hardwareWalletAccount, setHardwareWalletAccount] = useState(null);
 
   // `walletCount` is the number of HD wallets.
-  const walletCount = names.length
-  const setWalletCount = (count) => {};
+  const walletCount = names.length;
+  const setWalletCount = (count) => { };
 
   if (walletSelector.ledger && !_hardwareWalletAccount) {
     walletSelector = DEFAULT_WALLET_SELECTOR;
@@ -214,22 +216,22 @@ export function WalletProvider({ children }) {
         const account =
           walletSelector.walletIndex !== undefined
             ? getAccountFromSeed(
-                Buffer.from(seed, 'hex'),
-                walletSelector.walletIndex,
-                derivationPath,
-              )
+              Buffer.from(seed, 'hex'),
+              walletSelector.walletIndex,
+              derivationPath,
+            )
             : new Account(
-                (() => {
-                  const { nonce, ciphertext } = privateKeyImports[
-                    walletSelector.importedPubkey
-                  ];
-                  return nacl.secretbox.open(
-                    bs58.decode(ciphertext),
-                    bs58.decode(nonce),
-                    importsEncryptionKey,
-                  );
-                })(),
-              );
+              (() => {
+                const { nonce, ciphertext } = privateKeyImports[
+                  walletSelector.importedPubkey
+                ];
+                return nacl.secretbox.open(
+                  bs58.decode(ciphertext),
+                  bs58.decode(nonce),
+                  importsEncryptionKey,
+                );
+              })(),
+            );
         wallet = await Wallet.create(connection, 'local', { account });
       }
       setWallet(wallet);
@@ -249,6 +251,15 @@ export function WalletProvider({ children }) {
     if (importedAccount === undefined) {
       // name && localStorage.setItem(`name${walletCount}`, name);
       // setWalletCount(walletCount + 1);
+      const newNames = [...names, name || `newAccount${walletCount + 1}`];
+      storeMnemonicAndSeed(
+        mnemonic,
+        seed,
+        undefined,
+        derivationPath,
+        newNames
+      )
+      updateAccount({ names: newNames })
     } else {
       const nonce = nacl.randomBytes(nacl.secretbox.nonceLength);
       const plaintext = importedAccount.secretKey;
@@ -264,16 +275,20 @@ export function WalletProvider({ children }) {
     }
   }
 
-  const [walletNames, setWalletNames] = useState(names);
+  // const [walletNames, setWalletNames] = useState(names);
   function setAccountName(selector, newName) {
     if (selector.importedPubkey && !selector.ledger) {
       let newPrivateKeyImports = { ...privateKeyImports };
       newPrivateKeyImports[selector.importedPubkey.toString()].name = newName;
       setPrivateKeyImports(newPrivateKeyImports);
     } else {
-      localStorage.setItem(`name${selector.walletIndex}`, newName);
-      setWalletNames(names);
+      console.log("TODO: update name")
+      // localStorage.setItem(`name${selector.walletIndex}`, newName);
+      // setWalletNames(names);
     }
+  }
+  const setWalletNames = () => {
+    console.log("TODO: set wallet names")
   }
 
   const [accounts, derivedAccounts] = useMemo(() => {
@@ -314,7 +329,7 @@ export function WalletProvider({ children }) {
     const accounts = derivedAccounts.concat(importedAccounts);
     return [accounts, derivedAccounts];
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [seed, walletCount, walletSelector, privateKeyImports, walletNames]);
+  }, [seed, walletCount, walletSelector, privateKeyImports, names]);
 
   let hardwareWalletAccount;
   if (_hardwareWalletAccount) {
@@ -352,7 +367,6 @@ export function WalletProvider({ children }) {
         hardwareWalletAccount,
         setHardwareWalletAccount,
         setWalletNames,
-        // setWalletCount,
       }}
     >
       {children}
@@ -401,8 +415,8 @@ export function useWalletAddressForMint(mint) {
     () =>
       mint
         ? walletAccounts
-            ?.find((account) => account.parsed?.mint?.equals(mint))
-            ?.publicKey.toBase58()
+          ?.find((account) => account.parsed?.mint?.equals(mint))
+          ?.publicKey.toBase58()
         : null,
     [walletAccounts, mint],
   );

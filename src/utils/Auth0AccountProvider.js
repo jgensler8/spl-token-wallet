@@ -1,3 +1,4 @@
+import { useAuth0 } from '@auth0/auth0-react';
 import { createContext, useContext, useCallback, useEffect, useState } from 'react';
 import { generateMnemonicAndSeed } from './wallet-seed';
 
@@ -13,7 +14,7 @@ function defaultEncryptionParams() {
 }
 
 // get user details
-async function getDefaultAuth0Account(domain, user, getAccessTokenSilently, key) {
+async function getOrDefaultAuth0Account(domain, user, getAccessTokenSilently, key) {
     if (key === undefined) {
         return undefined;
     }
@@ -38,7 +39,9 @@ async function getDefaultAuth0Account(domain, user, getAccessTokenSilently, key)
         const decrypted = await window.crypto.subtle.decrypt(encryption_params, key, array);
         const decoder = new TextDecoder();
         const decoded = decoder.decode(decrypted);
-        return JSON.parse(decoded);
+        const account = JSON.parse(decoded);
+        console.log(account);
+        return account;
     } else {
         let mnemonic_seed = await generateMnemonicAndSeed();
         let tree = {
@@ -80,40 +83,54 @@ async function setAuth0Account(domain, user, getAccessTokenSilently, key, newSta
 const Auth0AccountContext = createContext({});
 
 // provider
-export const Auth0AccoutProvider = ({ children }) => {
+export const Auth0AccountProvider = ({ children }) => {
     const [auth0Lib, setAuth0Lib] = useState(undefined)
+    /*
+    account: {
+        mnemonic: string,
+        seed: string,
+        names: [string]
+    }
+    */
     const [account, setLocalAccount] = useState(undefined);
     const [key, setLocalKey] = useState(undefined)
 
     const domain = 'authwallet.us.auth0.com';
 
-    const setAccount = useCallback(
+    const updateAccount = useCallback(
         (newAccount) => {
-            // store remote
-            setAuth0Account(domain, auth0Lib.user, auth0Lib.getAccessTokenSilently, key, newAccount)
-                .then(() => {
-                    // update locally
-                    setLocalAccount(newAccount)
-                })
+            console.log(newAccount)
+            console.log(auth0Lib)
+            console.log(key)
+            if (setAuth0Lib !== undefined && key !== undefined) {
+                let merged = {
+                    ...account,
+                    ...newAccount,
+                }
+                console.log(merged)
+                // store remote
+                setAuth0Account(domain, auth0Lib.user, auth0Lib.getAccessTokenSilently, key, merged)
+                    .then(() => {
+                        // update locally
+                        setLocalAccount(merged)
+                    })
+            }
         },
-        [domain, auth0Lib, key]
+        [domain, auth0Lib, account, key]
     );
 
     useEffect(() => {
         if (account === undefined && setAuth0Lib !== undefined && key !== undefined) {
-            getDefaultAuth0Account(domain, auth0Lib.user, auth0Lib.getAccessTokenSilently, key)
-                .then(account => setAccount(account))
+            getOrDefaultAuth0Account(domain, auth0Lib.user, auth0Lib.getAccessTokenSilently, key)
+                .then(account => updateAccount(account))
         }
-    }, [domain, auth0Lib, account, key, setAccount])
+    }, [domain, auth0Lib, account, key, updateAccount])
 
-    const setKey = useCallback(
-        (key) => {
-            setLocalKey(key)
-        },
-        []
-    );
+    const setKey = (key) => {
+        setLocalKey(key)
+    }
 
-    const value = { setAuth0Lib, account, setAccount, key, setKey };
+    const value = { setAuth0Lib, account, updateAccount, key, setKey };
     return (
         <Auth0AccountContext.Provider value={value}>
             {children}

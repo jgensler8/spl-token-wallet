@@ -266,8 +266,8 @@ export default function BalancesList() {
         </Toolbar>
       </AppBar>
       <List disablePadding>
-        {balanceListItemsMemo.map((Memoized) => (
-          <Memoized />
+        {balanceListItemsMemo.map((Memoized, index) => (
+          <Memoized key={index} />
         ))}
         {loaded ? null : <LoadingIndicator />}
       </List>
@@ -311,7 +311,7 @@ const useStyles = makeStyles((theme) => ({
 }));
 
 export function BalanceListItem({ publicKey, expandable, setUsdValue }) {
-  const wallet = useWallet();
+  // const wallet = useWallet();
   const balanceInfo = useBalanceInfo(publicKey);
   const classes = useStyles();
   const connection = useConnection();
@@ -379,19 +379,19 @@ export function BalanceListItem({ publicKey, expandable, setUsdValue }) {
   }
 
   // Fetch and cache the associated token address.
-  if (wallet && wallet.publicKey && mint) {
+  if (publicKey && mint) {
     if (
-      associatedTokensCache[wallet.publicKey.toString()] === undefined ||
-      associatedTokensCache[wallet.publicKey.toString()][mint.toString()] ===
+      associatedTokensCache[publicKey.toString()] === undefined ||
+      associatedTokensCache[publicKey.toString()][mint.toString()] ===
         undefined
     ) {
-      findAssociatedTokenAddress(wallet.publicKey, mint).then((assocTok) => {
+      findAssociatedTokenAddress(publicKey, mint).then((assocTok) => {
         let walletAccounts = Object.assign(
           {},
-          associatedTokensCache[wallet.publicKey.toString()],
+          associatedTokensCache[publicKey.toString()],
         );
         walletAccounts[mint.toString()] = assocTok;
-        associatedTokensCache[wallet.publicKey.toString()] = walletAccounts;
+        associatedTokensCache[publicKey.toString()] = walletAccounts;
         if (assocTok.equals(publicKey)) {
           // Force a rerender now that we've cached the value.
           setForceUpdate((forceUpdate) => !forceUpdate);
@@ -403,13 +403,12 @@ export function BalanceListItem({ publicKey, expandable, setUsdValue }) {
   // undefined => not loaded.
   let isAssociatedToken = mint ? undefined : false;
   if (
-    wallet &&
-    wallet.publicKey &&
+    publicKey &&
     mint &&
-    associatedTokensCache[wallet.publicKey.toString()]
+    associatedTokensCache[publicKey.toString()]
   ) {
     let acc =
-      associatedTokensCache[wallet.publicKey.toString()][mint.toString()];
+      associatedTokensCache[publicKey.toString()][mint.toString()];
     if (acc) {
       if (acc.equals(publicKey)) {
         isAssociatedToken = true;
@@ -434,15 +433,16 @@ export function BalanceListItem({ publicKey, expandable, setUsdValue }) {
       </div>
     );
 
-  const usdValue =
-    price === undefined // Not yet loaded.
-      ? undefined
-      : price === null // Loaded and empty.
-      ? null
-      : ((amount / Math.pow(10, decimals)) * price).toFixed(2); // Loaded.
-  if (setUsdValue && usdValue !== undefined) {
-    setUsdValue(publicKey, usdValue === null ? null : parseFloat(usdValue));
-  }
+  // const usdValue =
+  //   price === undefined // Not yet loaded.
+  //     ? undefined
+  //     : price === null // Loaded and empty.
+  //     ? null
+  //     : ((amount / Math.pow(10, decimals)) * price).toFixed(2); // Loaded.
+  // if (setUsdValue && usdValue !== undefined) {
+  //   setUsdValue(publicKey, usdValue === null ? null : parseFloat(usdValue));
+  // }
+  const usdValue = 0.0;
 
   return (
     <>

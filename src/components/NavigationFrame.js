@@ -96,18 +96,17 @@ function NavigationButtons() {
   let elements = [];
   if (page === 'wallet') {
     elements = [
-      isExtension && <ConnectionsButton />,
-      <WalletSelector />,
-      <NetworkSelector />,
-      <LoginButton />,
-      <TestConnectProvision />,
+      isExtension && <ConnectionsButton key="connectionButton"/>,
+      <WalletSelector key="walletSelector"/>,
+      <NetworkSelector key="networkSelector"/>,
+      <TestConnectProvision key="testConnectionProvision"/>,
     ];
   } else if (page === 'connections') {
-    elements = [<WalletButton />];
+    elements = [<WalletButton key="walletButton"/>];
   }
 
   if (isExtension && isExtensionWidth) {
-    elements.push(<ExpandButton />);
+    elements.push(<ExpandButton key="expandButton"/>);
   }
 
   return elements;
@@ -125,20 +124,6 @@ function ExpandButton() {
       </IconButton>
     </Tooltip>
   );
-}
-
-function LoginButton() {
-  const classes = useStyles();
-  const { loginWithRedirect } = useAuth0();
-  const onClick = () => { console.log("TOOD"); loginWithRedirect(); };
-
-  return (
-    <>
-      <Button color="inherit" onClick={onClick} className={classes.button}>
-        Login With Auth0
-      </Button>
-    </>
-  )
 }
 
 function TestConnectProvision() {
