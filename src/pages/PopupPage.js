@@ -329,15 +329,12 @@ export default function PopupPage({ opener }) {
     });
   }
 
-  async function onProvision() {
+  async function onProvision(accountMap) {
     popRequest();
     postMessage({
       method: 'connectProvisioned',
       result: {
-        keys: {
-          payer: wallet.publicKey.toBase58(),
-          app_v1: wallet.publicKey.toBase58()
-        },
+        keys: accountMap,
       },
       id: request.id,
     });
